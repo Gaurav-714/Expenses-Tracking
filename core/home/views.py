@@ -3,15 +3,17 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate, login, logout
 from .serializers import *
 from .models import Expense
-from django.contrib.auth import authenticate, login, logout
 
 
 class TrackExpense(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]   
 
     def post(self, request):
@@ -25,26 +27,23 @@ class TrackExpense(APIView):
             })
         
         obj = Expense(user=request.user, title=title, amount=amount)
-        #obj = Expense(title=title, amount=amount)
         obj.save()
         expenses = Expense.objects.filter(user = request.user).order_by('date')
-        #expenses = Expense.objects.all().order_by('date')
         serializer = ExpenseSerializer(expenses, many=True)
 
         return Response({
             'status' : status.HTTP_201_CREATED,
-            'data' : serializer.data
+            'payload' : serializer.data
         })        
     
 
     def get(self, request):
         try:
             expenses = Expense.objects.filter(user = request.user).order_by('date')
-            #expenses = Expense.objects.all().order_by('date')
             serializer = ExpenseSerializer(expenses, many=True)
             return Response({
                 'status' : '200',
-                'data' : serializer.data
+                'payload' : serializer.data
             })
         
         except Exception as ex:
@@ -83,12 +82,14 @@ class SignUpView(APIView):
         if serializer.is_valid():
             obj = serializer.save()
             if obj:
-                token, _ = Token.objects.get_or_create(user = obj)
+                #token, _ = Token.objects.get_or_create(user = obj)  # For Token Authentication
+                refresh = RefreshToken.for_user(obj)  # For JWT Authentication
                 return Response({
                     'status' : status.HTTP_201_CREATED,
                     'message' : 'Signed Up Successfully.',
-                    'data' : serializer.data,
-                    'token': token.key
+                    'payload' : serializer.data,
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token)
                 })
 
         return Response({
@@ -99,7 +100,7 @@ class SignUpView(APIView):
 
 class SignInView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     #permission_classes = [IsAuthenticated]
     
     def post(self,request):
