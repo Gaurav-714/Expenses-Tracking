@@ -138,7 +138,7 @@ DATABASES = {
     }
 }
 '''
-
+'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -147,6 +147,18 @@ DATABASES = {
         'PASSWORD': 'DjDev714',
         'HOST': '127.0.0.1',
         'PORT': '3306',
+    }
+}
+'''
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "pgsdb",
+        "USER": "harry",
+        "PASSWORD": "djDev714",
+        "HOST": "127.0.0.1",
+        "PORT": "5432",
     }
 }
 
